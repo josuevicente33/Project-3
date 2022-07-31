@@ -250,9 +250,21 @@ vector<pair<float, string>> runUnorderedMapTaggedSearch() {
 
     // print out all the tags and let user keep selecting until they are done
     int selection = -1;
+    int k = 1;
     cout << "\nChoose Tags: " << endl;
-    for (int i = 1; i < allTags.size() - 1; i++)
-        cout << "   " << i <<". " << allTags[i] << endl;
+    for (int i = 4; i < allTags.size() - 2; i++) {
+        if (i == 4)
+            cout << "Publishers" << endl;
+        if (i == 24)
+            cout << "Release Year" << endl;
+        if (i == 45)
+            cout << "Genres" << endl;
+
+
+        cout << "   " << k <<". " << allTags[i] << endl;
+        k++;
+    }
+
 
     cout << "\nEnter Selection (-1 Done): ";
     cin >> selection;
@@ -290,7 +302,7 @@ vector<string> taggedSearch(unordered_map<string, unordered_map<string, int>>& g
         bool sameTags = true;
 
         // For each game, for all the tags we have, if we do not find it in the game we are looking at, we can skip it
-        for (int i : tagSelection) {
+        for (int i: tagSelection) {
             if ((gamesIter->second.find(allTags[i]) == gamesIter->second.end()) && otherGameAttributes[gamesIter->first].find(allTags[i]) == otherGameAttributes[gamesIter->first].end()) {
                 sameTags = false;
                 break;

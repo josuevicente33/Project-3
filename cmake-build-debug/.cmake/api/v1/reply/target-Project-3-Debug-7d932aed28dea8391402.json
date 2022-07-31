@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Project_3.exe"
+			"path" : "Project-3.exe"
 		},
 		{
-			"path" : "Project_3.pdb"
+			"path" : "Project-3.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -59,7 +59,7 @@
 			]
 		}
 	],
-	"id" : "Project_3::@6890427a1f51a3e7e1df",
+	"id" : "Project-3::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -79,8 +79,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "Project_3",
-	"nameOnDisk" : "Project_3.exe",
+	"name" : "Project-3",
+	"nameOnDisk" : "Project-3.exe",
 	"paths" : 
 	{
 		"build" : ".",
