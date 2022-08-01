@@ -6,15 +6,6 @@
 #include <list>
 using namespace std;
 
-
-void readFile(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, unordered_map<string, bool>& publishers, unordered_map<string, bool>& genres, vector<string>& allTags);
-
-void runMostSimilarWithPQ();
-vector<pair<float, string>> findSimilarGames(const string& gameSelected,unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, unordered_map<string, bool>& publishers, unordered_map<string, bool>& genres);
-
-void runUnorderedMapTaggedSearch();
-vector<pair<float , string>> taggedSearch(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, vector<int>& tagSelection, vector<string>& allTags);
-
 class myPriorityQueue {
 private:
     int capacity = 16, size = 0;
@@ -48,6 +39,10 @@ public:
             topGames[i].second = tempData[i].second;
         }
         delete[] tempData;
+    }
+
+    pair<float, string>* getQueue() {
+        return topGames;
     }
 
     // Reuse and changed from quiz 7
@@ -137,6 +132,16 @@ public:
     }
 };
 
+void readFile(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes,
+              unordered_map<string, bool>& publishers, unordered_map<string, bool>& genres, vector<string>& allTags);
+
+void runMostSimilarWithPQ();
+void findSimilarGames(const string &gameSelected, unordered_map<string, unordered_map<string, int>> &gameAttributes, unordered_map<string, unordered_map<string, string>> &otherGameAttributes,
+                      unordered_map<string, bool> &publishers, unordered_map<string, bool> &genres, myPriorityQueue& queue);
+
+void runPQTaggedSearch();
+void taggedSearch(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes,
+                  vector<int>& tagSelection, vector<string>& allTags, myPriorityQueue& topGames);
 
 int main() {
     int selection = 0;
@@ -149,6 +154,11 @@ int main() {
     cin >> selection;
     cin.get();
 
+
+    // We can implement choice;
+
+
+
     while (selection != -1) {
         switch (selection) {
             case 1:
@@ -157,7 +167,7 @@ int main() {
                 break;
             case 2:
                 // Print prices of the games found based on tags
-                runUnorderedMapTaggedSearch();
+                runPQTaggedSearch();
                 break;
             default:
                 cout << "Not an option" << endl;
@@ -175,7 +185,10 @@ int main() {
 }
 
 
-void readFile(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, unordered_map<string, bool>& publishers, unordered_map<string, bool>& genres, vector<string>& allTags) {
+void readFile(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string,
+        string>>& otherGameAttributes,unordered_map<string, bool>& publishers,
+              unordered_map<string, bool>& genres, vector<string>& allTags) {
+
     string tempLine = {};
     ifstream file("videogames.csv");
     getline(file, tempLine);
@@ -247,12 +260,12 @@ void readFile(unordered_map<string, unordered_map<string, int>>& gameAttributes,
 
 void runMostSimilarWithPQ() {
     vector<string> allTags;
-    vector<pair<float, string>> games;
     unordered_map<string, bool> genres;
     unordered_map<string, bool> publishers;
     unordered_map<string, unordered_map<string, int>> gameAttributes;
     unordered_map<string, unordered_map<string, string>> otherGameAttributes;
-        // otherGameAttributes stores anything that is not an int
+
+    // otherGameAttributes stores anything that is not an int
 
     readFile(gameAttributes, otherGameAttributes, publishers, genres, allTags);
 
@@ -262,18 +275,20 @@ void runMostSimilarWithPQ() {
     getline(cin, selection);
 
     while (selection != "-1") {
-        games = findSimilarGames(selection, gameAttributes, otherGameAttributes, publishers, genres);
+        myPriorityQueue topGamesQueue;
+        findSimilarGames(selection, gameAttributes, otherGameAttributes, publishers, genres, topGamesQueue);
 
-        if (games.empty()) {
+        if (topGamesQueue.getSize() == 0) {
             cout << "No similar games found" << endl;
         }
         else {
-            int i = 1;
+            int k = 1;
 
             cout << "Most Similar Games: " << endl;
-            for (auto iter = games.begin(); iter < games.end(); iter++) {
-                cout << "   " << i << ". " << iter->second << " Price: $" << otherGameAttributes[iter->second]["Usedprice"] << endl;
-                i++;
+            for (int i = topGamesQueue.getSize(); i > 1; i--) {
+                pair<float, string> top = topGamesQueue.extractMax();
+                cout << "   " << k << ". " << top.second << " Price: $" << otherGameAttributes[top.second]["Usedprice"] << endl;
+                k++;
             }
         }
 
@@ -282,8 +297,8 @@ void runMostSimilarWithPQ() {
     }
 }
 
-vector<pair<float , string>> findSimilarGames(const string& gameSelected,unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, unordered_map<string, bool>& publishers, unordered_map<string, bool>& genres) {
-    vector<pair<float, string>> mostSimilarGames;
+void findSimilarGames(const string& gameSelected,unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, unordered_map<string,
+        bool>& publishers, unordered_map<string, bool>& genres, myPriorityQueue& topGamesQueue) {
 
     // Weights
     int onlineWeight = 2;
@@ -292,7 +307,6 @@ vector<pair<float , string>> findSimilarGames(const string& gameSelected,unorder
     int consoleWeight = 1;
     int maxPointsPossible = 0;
     float similarityThreshold = .750;
-    myPriorityQueue test;
 
     // Finding max points of genre to figure out similarity rate by checking through the attributes to see if it's a genre, add corresponding weight.
     for (auto & iter : gameAttributes[gameSelected]) {
@@ -332,7 +346,7 @@ vector<pair<float , string>> findSimilarGames(const string& gameSelected,unorder
 
         // Review Scores are bonus, not part of max points; weights adjusted here.
         if (gamesIter->second["Review Score"] > 89)
-            points = points + 2;
+            points = points + 4;
         else if (gamesIter->second["Review Score"] > 79)
             points = points + 1;
         else if (gamesIter->second["Review Score"] > 69)
@@ -347,30 +361,24 @@ vector<pair<float , string>> findSimilarGames(const string& gameSelected,unorder
 
         // Insert to pq, so we can sort based on max similarity when given to vector
         if (similarityRatio > similarityThreshold && gamesIter->first != gameSelected) {
-            test.insert(make_pair(similarityRatio, gamesIter->first));
+            topGamesQueue.insert(make_pair(similarityRatio, gamesIter->first));
         }
     }
-
-    mostSimilarGames.reserve(test.getSize());
-    for (int i = 0 ; i < test.getSize(); i++ ) {
-        mostSimilarGames.emplace_back(test.extractMax());
-   }
-
-    return mostSimilarGames;
 }
 
-void runUnorderedMapTaggedSearch() {
-    vector<pair<float , string>> games;
+void runPQTaggedSearch() {
     vector<string> allTags;
-    vector<int> tagSelection;
+    vector<int> tagSelection = {};
+    myPriorityQueue topGamesQueue;
     unordered_map<string, bool> genres;
     unordered_map<string, bool> publishers;
     unordered_map<string, unordered_map<string, int>> gameAttributes;
     unordered_map<string, unordered_map<string, string>> otherGameAttributes;
-        // otherGameAttributes stores anything that is not an int
+    // otherGameAttributes stores anything that is not an int
 
     readFile(gameAttributes, otherGameAttributes, publishers, genres, allTags);
 
+    cout << "Game aat" << gameAttributes.size() << " ither" << otherGameAttributes.size();
     // print out all the tags and let user keep selecting until they are done
     int selection = -1;
     cout << "\nChoose Tags: " << endl;
@@ -392,67 +400,54 @@ void runUnorderedMapTaggedSearch() {
     cin.get();
 
     while (selection != -1) {
-        tagSelection.push_back(selection);
+        if (selection > 0 && selection < 142)
+            tagSelection.push_back(selection + 3);
+        else
+            cout << "Invalid, try again." << endl;
+
         cout << "Next Selection (-1 Done): ";
         cin >> selection;
     }
 
-    games = taggedSearch(gameAttributes, otherGameAttributes, tagSelection, allTags);
+    taggedSearch(gameAttributes, otherGameAttributes, tagSelection, allTags, topGamesQueue);
 
-    if (games.empty()) {
+    if (topGamesQueue.getSize() == 0) {
         cout << "No similar games found" << endl;
     }
     else {
-        int k = 0;
-        cout << "\nMost Similar Games: " << endl;
+        int k = 1;
 
-        for (int i = 1; i < games.size(); i++) {
-            cout << "   " << i << ". " << games[i].second << " Price: $" << otherGameAttributes[games[i].second]["Usedprice"] << endl;
+        cout << "Most Similar Games: " << endl;
+        for (int i = topGamesQueue.getSize(); i > 1; i--) {
+            pair<float, string> top = topGamesQueue.extractMax();
+            cout << "   " << k << ". " << top.second << " Price: $" << otherGameAttributes[top.second]["Usedprice"] << endl;
             k++;
         }
         cout << endl;
+        cout << "Next Option: " << endl;
     }
-    // Once again need to return the price of an item based on the tags that were chosen
 }
 
-vector<pair<float, string>> taggedSearch(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes, vector<int>& tagSelection, vector<string>& allTags) {
-    myPriorityQueue topGames;
-    vector<pair<float , string>> mostSimilarGames;
+void taggedSearch(unordered_map<string, unordered_map<string, int>>& gameAttributes, unordered_map<string, unordered_map<string, string>>& otherGameAttributes,
+                  vector<int>& tagSelection, vector<string>& allTags, myPriorityQueue& topGamesQueue) {
     auto gamesIter = gameAttributes.begin();
 
-    // We look  all games
+    // We look all games
     for (gamesIter = gameAttributes.begin(); gamesIter != gameAttributes.end(); gamesIter++) {
         float count = 0;
         bool sameTags = true;
 
-
-
         // For each game, for all the tags we have, if we do not find it in the game we are looking , we can skip it
-        for (int i : tagSelection) {
-            if ((gamesIter->second.find(allTags[i]) == gamesIter->second.end()) && otherGameAttributes[gamesIter->first].find(allTags[i]) == otherGameAttributes[gamesIter->first].end()) {
+        for (int i = 0; i < tagSelection.size(); i++) {
+            if ((gamesIter->second.find(allTags[tagSelection[i]]) == gamesIter->second.end()) && otherGameAttributes[gamesIter->first].find(allTags[tagSelection[i]]) == otherGameAttributes[gamesIter->first].end()) {
                 sameTags = false;
                 break;
             }
-            else {
+            else
                 count = count + 1;
-            }
-
         }
 
-        if (sameTags) {
-            topGames.insert(make_pair(count, gamesIter->first));
-        }
+        if (sameTags)
+            topGamesQueue.insert(make_pair(count, gamesIter->first));
     }
-
-    for (int i = topGames.getSize(); i > 0; i--) {
-        mostSimilarGames.emplace_back(topGames.extractMax());
-    }
-
-    return mostSimilarGames;
 }
-
-
-
-
-
-
