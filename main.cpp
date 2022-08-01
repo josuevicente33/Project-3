@@ -154,6 +154,11 @@ int main() {
     cin >> selection;
     cin.get();
 
+
+    // We can implement choice;
+
+
+
     while (selection != -1) {
         switch (selection) {
             case 1:
@@ -341,7 +346,7 @@ void findSimilarGames(const string& gameSelected,unordered_map<string, unordered
 
         // Review Scores are bonus, not part of max points; weights adjusted here.
         if (gamesIter->second["Review Score"] > 89)
-            points = points + 2;
+            points = points + 4;
         else if (gamesIter->second["Review Score"] > 79)
             points = points + 1;
         else if (gamesIter->second["Review Score"] > 69)
